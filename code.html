@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lumina - Retro Camera App</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=VT323&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#ffe2dd",
+                        "surface-variant": "#ffdad4",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#ffe6e0",
+                        "surface-container-highest": "#ffdad4",
+                        "on-secondary-fixed": "#2c1600",
+                        "on-primary-container": "#706a54",
+                        "on-surface": "#2b1613",
+                        "tertiary-fixed-dim": "#e5beb5",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#ebe2c8",
+                        "on-secondary-container": "#784c1a",
+                        "surface-container": "#ffe9e5",
+                        "tertiary-fixed": "#ffdad2",
+                        "on-secondary-fixed-variant": "#663d0b",
+                        "background": "#fff8f6",
+                        "error-container": "#ffdad6",
+                        "primary": "#645e49",
+                        "outline-variant": "#cbc6ba",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fff8f6",
+                        "on-tertiary-fixed-variant": "#5c403a",
+                        "primary-fixed-dim": "#cec6ad",
+                        "secondary-fixed": "#ffdcbd",
+                        "surface-tint": "#645e49",
+                        "on-tertiary-fixed": "#2b1611",
+                        "outline": "#7b776d",
+                        "on-primary-fixed-variant": "#4c4733",
+                        "surface-container-low": "#fff0ee",
+                        "tertiary": "#755750",
+                        "primary-container": "#f4ebd0",
+                        "on-primary-fixed": "#1f1c0b",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#f7bb7e",
+                        "secondary-container": "#fdc083",
+                        "on-tertiary-container": "#82635b",
+                        "on-background": "#2b1613",
+                        "secondary": "#825422",
+                        "inverse-primary": "#cec6ad",
+                        "surface-bright": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#f8d1cb",
+                        "inverse-on-surface": "#ffedea",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#422a26",
+                        "on-surface-variant": "#4a473e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "container-margin": "20px",
+                        "stack-sm": "12px",
+                        "stack-lg": "48px",
+                        "base": "8px",
+                        "stack-md": "24px"
+                    },
+                    "fontFamily": {
+                        "pixel": ["VT323", "monospace"],
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'VT323', monospace;
+        }
+
+        .texture-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+            z-index: 9999;
+        }
+
+        .retro-bg {
+            background-color: #ff99cc;
+            background-image: 
+                linear-gradient(45deg, #99ccff 25%, transparent 25%, transparent 75%, #99ccff 75%, #99ccff), 
+                linear-gradient(45deg, #99ccff 25%, transparent 25%, transparent 75%, #99ccff 75%, #99ccff);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+        }
+
+        .polaroid-card {
+            background-color: #ffffff;
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0px rgba(0,0,0,1);
+            padding: 12px 12px 32px 12px;
+            transition: transform 0.1s, box-shadow 0.1s;
+            cursor: grab;
+        }
+        
+        .polaroid-card:active {
+            cursor: grabbing;
+            transform: translate(2px, 2px);
+            box-shadow: 4px 4px 0px rgba(0,0,0,1);
+        }
+
+        .developing-image {
+            filter: blur(10px) contrast(0.5) sepia(1) hue-rotate(90deg);
+            transition: filter 3s ease-out;
+        }
+        
+        .developed-image {
+            filter: blur(0px) contrast(1.1) sepia(0);
+        }
+
+        .chunky-btn {
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0px #000;
+            transition: all 0.1s;
+        }
+        
+        .chunky-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px #000;
+        }
+
+        .console-body {
+            border: 6px solid #000;
+            box-shadow: 12px 12px 0px rgba(0,0,0,0.8);
+            border-radius: 40px 40px 60px 60px;
+        }
+
+        .screen-bezel {
+            border: 4px solid #000;
+            box-shadow: inset 4px 4px 0px rgba(0,0,0,0.3);
+        }
+
+        @keyframes slideUpCamera {
+            0% { transform: translateY(100%); opacity: 0; }
+            100% { transform: translateY(-20px); opacity: 1; }
+        }
+
+        .anim-slide-up {
+            animation: slideUpCamera 0.6s steps(10) forwards;
+        }
+
+        .washi-tape {
+            background-color: rgba(255, 255, 255, 0.4);
+            border: 2px solid #000;
+        }
+
+        .mini-panel {
+            background: #fffdf3;
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 rgba(0,0,0,1);
+        }
+
+        .panel-tab {
+            background: #ffd94d;
+            border: 3px solid #000;
+            border-bottom: 0;
+            display: inline-block;
+            padding: 3px 12px;
+            transform: rotate(-2deg);
+        }
+
+        .film-strip {
+            background: repeating-linear-gradient(90deg, #201d27 0 15px, #f25b93 15px 30px, #79caff 30px 45px, #ffd94d 45px 60px);
+            border: 3px solid #000;
+        }
+
+        .log-entry + .log-entry { border-top: 2px dashed #000; }
+    </style>
+<style>
+    @keyframes shiftBg {
+        0% { background-position: 0 0, 30px 30px; }
+        100% { background-position: 60px 60px, 90px 90px; }
+    }
+    .retro-bg {
+        animation: shiftBg 4s linear infinite;
+    }
+    .chunky-btn:hover {
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+</style></head>
+<body class="h-full text-black antialiased overflow-hidden">
+<div class="texture-overlay"></div>
+<!-- Main Workspace: Retro Wall -->
+<main class="w-full h-full retro-bg relative" id="collage-wall"><div class="absolute top-[20%] left-[5%] text-2xl text-black/40 rotate-[-10deg] pointer-events-none select-none animate-pulse">Stay Retro!</div>
+<div class="absolute top-[40%] right-[10%] text-3xl text-black/30 rotate-[15deg] pointer-events-none select-none animate-bounce">Smile! ✨</div>
+<div class="absolute bottom-[30%] left-[40%] text-xl text-black/40 rotate-[-5deg] pointer-events-none select-none">Cute overload!</div>
+<div class="absolute top-[60%] left-[15%] text-2xl text-black/30 rotate-[5deg] pointer-events-none select-none animate-pulse">Memories loading...</div>
+<!-- Little scribbles make the wall feel found, not filled -->
+<div class="absolute top-[8%] left-[38%] text-xl text-black/35 rotate-[8deg] pointer-events-none select-none">☆ tiny legend ☆</div>
+<div class="absolute top-[32%] left-[2%] text-2xl text-black/30 rotate-[12deg] pointer-events-none select-none">100% precious</div>
+<div class="absolute top-[47%] left-[8%] text-xl text-black/35 rotate-[-7deg] pointer-events-none select-none">beep boop, cute!</div>
+<div class="absolute top-[74%] left-[34%] text-2xl text-black/30 rotate-[4deg] pointer-events-none select-none animate-pulse">✦ max cozy ✦</div>
+<div class="absolute top-[82%] left-[62%] text-xl text-black/35 rotate-[-9deg] pointer-events-none select-none">mood: squishy</div>
+<div class="absolute top-[69%] right-[7%] text-2xl text-black/30 rotate-[7deg] pointer-events-none select-none">!!! adorable !!!</div>
+<div class="absolute top-[28%] right-[3%] text-xl text-black/35 rotate-[-12deg] pointer-events-none select-none">little guy alert</div>
+<div class="absolute bottom-[13%] right-[28%] text-xl text-black/35 rotate-[3deg] pointer-events-none select-none">say cheese :3</div>
+<div class="absolute bottom-[38%] right-[27%] text-2xl text-black/25 rotate-[-5deg] pointer-events-none select-none">cute.exe loaded</div>
+<div class="absolute top-[52%] left-[52%] text-xl text-black/30 rotate-[11deg] pointer-events-none select-none">soft focus club</div><div class="absolute top-10 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-6">
+<div class="w-60 h-60 animate-bounce">
+<img alt="Updated LUMINA Logo with Cat Image" class="w-full h-full object-contain pixelated" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBAxLbZjs7WFFYZHLhEyy985Sd43qcMfP47pIRYEYzScXy_YhQeGnrXjDBRzQxLTgXA1WqJODh15v1qNgdIimXJS0fSY6muFBSsumtoEWfnj-Sh2D2SufOnwSwYvsCYWS_SU6ywxmUZi1dZYFUB1Qdynm-hs9aS1k8gK2q2MCInNtICYtCZVitmWfjp8jdybZrP1s5njTIIysd9NV_oRJOWNdVSS7WOzBf9FBDb7n1TalKoaHqs2VQa-Q"/>
+</div>
+</div>
+<!-- Pre-placed Polaroid 1 -->
+<div class="polaroid-card absolute top-10 left-[10%] w-56 rotate-[-5deg]" style="z-index: 10;">
+<div class="aspect-square bg-gray-200 mb-2 border-2 border-black overflow-hidden">
+<img alt="Pet with hat" class="w-full h-full object-cover pixelated" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7igJE3V5k7rLqQjrhlGi3U35ngprTBhkB6h9XBH-y6_jexAroIOnazEbZOS2eAju7sDiY9tcIVbPi780Zysb3coRR7gWdRemhC1MVTd1RZFpQS-v9Lhjz_kkr68Oy6nNJDwvGTHskl8yTgsn7HnLmhZVo-nLQyh2cbDRH_MWx37EzFypLBw8fUslSBQ1Znd99wTD0HiqgPlVRpi_ecOaiECxsoAiyKTFAK-V3WF6zJUJpymoc0XeiY1wU31mrkRCfsYA"/>
+</div>
+<div class="text-xl text-center font-bold">COZY DOGGO</div>
+<div class="washi-tape absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-6 rotate-[-2deg]"></div>
+</div>
+<!-- Pre-placed Polaroid 2 -->
+<div class="polaroid-card absolute top-20 right-[15%] w-60 rotate-[6deg]" style="z-index: 11;">
+<div class="aspect-square bg-gray-200 mb-2 border-2 border-black overflow-hidden">
+<img alt="Ascending cat" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDf3vWR5ObHd7quX9mw2a9AP5x4x1sAcZKl8nHelr3eUJK8VD-vy6LCwhXtlkhO4CWhbAoyDbx-F3sm9lbiFdOVK7p2nP3sYFpIc4k7FVC0sSQuh0JQRTU_em-5mt696Y6Tg-C9bFxFowBur5MFm1PCKd0z4LUslFFYkMcmjlrf2AMAi3YLpd_bLwjAOP5ibpy_AEYl5AbvAZVX5Q91LVa3SQs5SGhyoTyJzUOMxmPveEVbeODVEYMT6nyOcQLmOqFR3aA"/>
+</div>
+<div class="text-xl text-center font-bold">ASCENSION</div>
+<div class="washi-tape absolute -top-4 right-10 w-16 h-5 rotate-[8deg]"></div>
+</div>
+<!-- Pre-placed Polaroid 3 -->
+<div class="polaroid-card absolute top-64 left-[30%] w-48 rotate-[-2deg]" style="z-index: 12;">
+<div class="aspect-square bg-gray-200 mb-2 border-2 border-black overflow-hidden">
+<img alt="Polite cat" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDLoz6z73s2LNjulpsqLCx0qiPCMuVCLJUeAw4tOHBUqqIwFNVUiFprFksNS5d-PRpSJq5_lae9xzaULwJFAB9V78qH2g--pLGaSEe4dc5bnGLNZWTb4BwzI8t7yaauQn40mRBVK9ID-Gx8jV1O0M-ckXQl29Amd4e9QiN6wsYwkR2JFgYQC6QeGoGlrfWchvb3RDts1O7MuK7uV7nr7nkDybMmVcP8nNS_0d7SujZHvBunJhCSUaB_uvqvXDk1g3pXPo"/>
+</div>
+<div class="text-xl text-center font-bold">HMM...</div>
+<div class="washi-tape absolute -top-2 left-4 w-12 h-5 rotate-[-10deg]"></div>
+</div>
+<!-- Pre-placed Polaroid 4 -->
+<div class="polaroid-card absolute top-72 right-[40%] w-52 rotate-[4deg]" style="z-index: 13;">
+<div class="aspect-square bg-gray-200 mb-2 border-2 border-black overflow-hidden">
+<img alt="Reaching cat" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4rSlywHbejNTMrLuwZnwu5K5bFzuq67p0chDAu1i5etyPn9NwZlYIsghVMDWwnlGrtcUJx1Xl7A_cMa7v2iNyu4z7M5zaNJzUtS5fqyJzDMQdLrh-e7eNgsmUnUtAFiiXcqgUAXlp4Bqp9eYIloIKdXrFwwLoZCmh2keDubzmXwAJepRx4l9gNL9rdzz_y0i4zlTeHmVRyGDbcY9vVOlMvfKtHqzL_9XEZHuYStHY0PYjjaXIk9NR1Kk93LPMjGzJE3g"/>
+</div>
+<div class="text-xl text-center font-bold">FIST BUMP</div>
+<div class="washi-tape absolute -top-3 right-1/2 w-14 h-6 rotate-[5deg]"></div>
+</div>
+</main>
+<!-- Camera Panel Panel -->
+<div class="fixed bottom-10 left-10 z-50 flex flex-col items-center">
+<!-- The emerging photo slot -->
+<div class="relative w-40 h-8 mb-[-16px] z-10 flex justify-center bg-black rounded-t-lg" id="photo-slot">
+<!-- New photos will be injected here and animate upwards -->
+</div>
+<!-- Console Body -->
+<div class="w-80 bg-yellow-400 p-6 flex flex-col gap-6 relative z-20 console-body">
+<div class="flex justify-between items-center bg-black text-yellow-400 px-3 py-1 rounded-sm border-2 border-black -mt-2 mx-auto">
+<span class="text-2xl tracking-widest font-bold">LUMINA BOY</span>
+</div>
+<!-- Viewfinder / Webcam -->
+<div class="w-full aspect-square bg-gray-400 rounded-lg p-4 screen-bezel flex flex-col relative">
+<div class="flex justify-between text-xs text-black font-bold mb-1">
+<span class="">BATT:||||</span>
+<span class="">REC ●</span>
+</div>
+<div class="flex-1 bg-green-900 border-2 border-black shadow-inner relative flex items-center justify-center overflow-hidden">
+<!-- Fallback view if webcam isn't active -->
+<div class="absolute inset-0 flex flex-col items-center justify-center text-green-400">
+<span class="material-symbols-outlined text-4xl mb-2">videocam</span>
+<span class="text-lg">CAM ACTIVE</span>
+</div>
+<!-- Frame guides -->
+<div class="absolute inset-2 border-2 border-green-500/30 pointer-events-none">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 border-2 border-green-500/50 flex items-center justify-center">
+<div class="w-1 h-1 bg-green-500/50"></div>
+</div>
+</div>
+</div>
+<div class="text-center text-black font-bold text-sm mt-1">GAME CAMERA v1.0</div>
+</div>
+<!-- Controls -->
+<div class="flex justify-between items-center mt-2 px-2">
+<!-- D-Pad Decoration -->
+<div class="relative w-20 h-20">
+<div class="absolute top-1/2 left-0 w-full h-6 bg-black -translate-y-1/2 rounded-sm border-b-4 border-gray-800"></div>
+<div class="absolute top-0 left-1/2 w-6 h-full bg-black -translate-x-1/2 rounded-sm border-r-4 border-b-4 border-gray-800"></div>
+<div class="absolute top-1/2 left-1/2 w-4 h-4 bg-gray-800 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+</div>
+<!-- SNAP Button -->
+<div class="flex flex-col items-center gap-1">
+<span class="text-black font-bold text-xl">SNAP A</span>
+<button class="chunky-btn w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-white text-2xl font-bold" id="snap-btn">
+                        📷
+                    </button>
+</div>
+</div>
+<!-- Speaker Grill -->
+<div class="flex gap-2 justify-end mt-4 rotate-[-30deg]">
+<div class="w-2 h-10 bg-black rounded-full"></div>
+<div class="w-2 h-10 bg-black rounded-full"></div>
+<div class="w-2 h-10 bg-black rounded-full"></div>
+<div class="w-2 h-10 bg-black rounded-full"></div>
+</div>
+</div>
+</div><div class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex gap-6 mb-4">
+<button class="chunky-btn bg-white px-8 py-4 text-4xl font-bold hover:scale-110 transition-transform">Twitter</button>
+<button class="chunky-btn bg-yellow-400 px-8 py-4 text-4xl font-bold hover:scale-110 transition-transform">BUY $LUMINA</button>
+</div>
+<!-- Film Log: a small live counter for this session -->
+<aside class="fixed right-8 bottom-8 z-40 w-56 hidden lg:block" aria-label="Film log">
+<div class="panel-tab text-lg font-bold">FILM LOG</div>
+<div class="mini-panel p-3 -mt-1 rotate-[1deg]">
+<div class="film-strip h-5 mb-3"></div>
+<div class="flex items-end justify-between border-b-2 border-black pb-2">
+<div><div class="text-sm">TODAY'S ROLL</div><div class="text-2xl font-bold">MEMORY MODE</div></div>
+<div class="text-4xl font-bold leading-none" id="snap-count">04</div>
+</div>
+<div class="log-entry pt-2 text-lg flex justify-between"><span>FILM LEFT</span><span id="film-left">20 / 24</span></div>
+<div class="log-entry pt-2 text-lg flex justify-between"><span>VIBE</span><span>✦ CUTE ✦</span></div>
+</div>
+</aside>
+<!-- Darkroom Notes: friendly, tactile guidance for the collage -->
+<aside class="fixed right-10 top-[52%] z-30 w-44 hidden xl:block rotate-[3deg]" aria-label="Darkroom notes">
+<div class="mini-panel bg-[#fdc083] p-3">
+<div class="flex items-center gap-2 border-b-2 border-black pb-1 mb-2"><span class="text-2xl">✎</span><span class="text-xl font-bold">DARKROOM NOTES</span></div>
+<p class="text-lg leading-5">SNAP A PHOTO,<br/>THEN DRAG IT<br/>ONTO YOUR WALL.</p>
+<div class="mt-3 border-t-2 border-dashed border-black pt-2 text-sm">PS. CAPTIONS ARE EDITABLE!</div>
+</div>
+</aside>
+<!-- Template for new polaroids -->
+<template id="polaroid-template">
+<div class="polaroid-card absolute w-48 transform -translate-x-1/2 anim-slide-up" style="z-index: 50;">
+<div class="aspect-square bg-gray-200 mb-2 border-2 border-black overflow-hidden relative">
+<!-- Developing Image -->
+<img alt="New Snap" class="w-full h-full object-cover developing-image" src=""/>
+<div class="absolute inset-0 border border-black/10 pointer-events-none"></div>
+</div>
+<div class="text-xl text-center font-bold border-b-2 border-dashed border-black pb-1 w-[90%] mx-auto text-transparent focus:text-black outline-none" contenteditable="true">
+                PIXEL SNAP
+            </div>
+<div class="washi-tape absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-5 rotate-[3deg]"></div>
+</div>
+</template>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const snapBtn = document.getElementById('snap-btn');
+            const photoSlot = document.getElementById('photo-slot');
+            const collageWall = document.getElementById('collage-wall');
+            const template = document.getElementById('polaroid-template');
+            const snapCount = document.getElementById('snap-count');
+            const filmLeft = document.getElementById('film-left');
+            
+            let zIndexCounter = 100;
+            let photoCount = 4;
+            
+            const snapImages = [
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuBvqYgMAgXnG8yue-voRU-xl6pfKUtbN0uNeHPC_mJ0XJa7VGXf76Wc44-kIOhF1Xl9R8gRm6aPg7zuMJouaj_kPa1BZrLObMg1QerWEpLxXKaQCpZR8IAdte10584iQGda7etwUz37PodZ9mjzerdV53KBp_ebaogrMSS-FXqTilwmgZgG6jVpk_G-GH4gFMe2Z7j_s9pfQGHFCgh17eeaxxr14MfuUG0Q63CD00ZV_Sl5KOnTfBXb4EH9jRA8mLFTTRE',
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuCu12YoxEsExqcE_l85wh3LKwnQZRczyk_JczDMnE9V7cJcLr3kstpYDA_nXZIVBhRjwkfsOsQiRymDPxln4y-9pHD_GLPERFYl6YCllaaeWKtec_qi9L22Du03xZaYPbTM_BG-KA85wKB716o95xeIcAqEvywPVqeeV66DhfKKSE_NMmnbEKaPIwOcLKJ9Mp_3hWylWcqlaGECG4xMlApSyU60Z3nar0vcE7rdY_Pp2ajxLanQsjq00RWb6m0QMy2Kr5s',
+                'https://lh3.googleusercontent.com/aida-public/AB6AXuABlfCjXK5sWOE9KEn5x6GRZRQkyl7NGDMneDRd8w6eEFZU-g1bZRWF4NUZa3gqy68yPW36dAPwQ6efaqHk0GdEyrYTyDnI8-JgLG7tvem3ED1ZP3f63B6b2qGIpPqbyGN2aXjJimlqb41zmM_7NJfo7kOstg4XWZROXWWqLuzCMbbbikMnCC_WcF2zNPebQ_U_baAm-QFoeGwiiIa6YfbW8HCwmnskMRb02b4aXmPaOgKoNy_7sdKCvqI1Ts-bsAJ_hS4'
+            ];
+            
+            const snapCaptions = [
+                'New Snap!',
+                'Cute!',
+                'Found one!',
+                'Masterpiece',
+                'So retro'
+            ];
+
+            // Draggable logic
+            function makeDraggable(element) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                
+                element.onmousedown = dragMouseDown;
+
+                function dragMouseDown(e) {
+                    // Don't drag if clicking on the editable caption
+                    if (e.target.hasAttribute('contenteditable')) return;
+                    
+                    e.preventDefault();
+                    // Bring to front
+                    element.style.zIndex = ++zIndexCounter;
+                    
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+
+                function elementDrag(e) {
+                    e.preventDefault();
+                    pos1 = pos3 - e.clientX;
+                    pos2 = pos4 - e.clientY;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    
+                    element.style.top = (element.offsetTop - pos2) + "px";
+                    element.style.left = (element.offsetLeft - pos1) + "px";
+                }
+
+                function closeDragElement() {
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+
+            // Make existing polaroids draggable
+            document.querySelectorAll('.polaroid-card').forEach(makeDraggable);
+
+            snapBtn.addEventListener('click', () => {
+                photoCount += 1;
+                snapCount.textContent = String(photoCount).padStart(2, '0');
+                filmLeft.textContent = `${Math.max(0, 24 - photoCount)} / 24`;
+                // Clone template
+                const newPolaroid = template.content.cloneNode(true).querySelector('.polaroid-card');
+                
+                // Set initial position relative to the slot
+                newPolaroid.style.left = '50%';
+                newPolaroid.style.top = '0';
+                
+                // Randomize image and caption
+                const img = newPolaroid.querySelector('img');
+                img.src = snapImages[Math.floor(Math.random() * snapImages.length)];
+                
+                const caption = newPolaroid.querySelector('[contenteditable="true"]');
+                caption.textContent = snapCaptions[Math.floor(Math.random() * snapCaptions.length)];
+                caption.classList.remove('text-transparent');
+                
+                // Add to slot first to trigger animation
+                photoSlot.appendChild(newPolaroid);
+                
+                // Simulate development process
+                setTimeout(() => {
+                    img.classList.remove('developing-image');
+                    img.classList.add('developed-image');
+                }, 100); 
+
+                // After animation completes, move to wall
+                setTimeout(() => {
+                    newPolaroid.classList.remove('anim-slide-up');
+                    
+                    collageWall.appendChild(newPolaroid);
+                    
+                    newPolaroid.style.position = 'absolute';
+                    
+                    // Random position on the wall (keep roughly within bounds)
+                    const randomLeft = 10 + Math.random() * 70;
+                    const randomTop = 10 + Math.random() * 70;
+                    newPolaroid.style.left = `${randomLeft}%`;
+                    newPolaroid.style.top = `${randomTop}%`;
+                    
+                    // Random rotation between -10 and 10 degrees
+                    const rot = (Math.random() * 20) - 10; 
+                    newPolaroid.style.transform = `rotate(${rot}deg)`;
+                    
+                    makeDraggable(newPolaroid);
+                }, 700);
+            });
+        });
+    </script>
+</body></html>
